@@ -444,7 +444,7 @@ impl MacosCaptureStream {
                     }
                 }
                 let mut filter;
-                let windows = capture_config.included_windows;
+                let windows = capture_config.excluded_windows;
                 let mut sc_windows = Vec::new();
                 if let Some(windows) = windows {
                     for w in windows {
