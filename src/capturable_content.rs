@@ -225,6 +225,11 @@ unsafe impl Send for CapturableWindow {}
 unsafe impl Sync for CapturableWindow {}
 
 impl CapturableWindow {
+    /// Gets the id of the window
+    pub fn id(&self) -> u32 {
+        self.impl_capturable_window.id()
+    }
+
     /// Gets the title of the window
     pub fn title(&self) -> String {
         self.impl_capturable_window.title()

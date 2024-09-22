@@ -61,6 +61,10 @@ impl MacosCapturableWindow {
         }
     }
 
+    pub fn id(&self) -> u32 {
+        self.window.id().0
+    }
+
     pub fn title(&self) -> String {
         self.window.title()
     }
