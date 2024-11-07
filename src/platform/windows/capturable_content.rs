@@ -1,10 +1,29 @@
-use std::{ffi::OsString, hash::Hash, os::{raw::c_void, windows::ffi::OsStringExt}, sync::Arc};
+use std::{
+    ffi::OsString,
+    hash::Hash,
+    os::{raw::c_void, windows::ffi::OsStringExt},
+    sync::Arc,
+};
 
-use windows::Win32::{Foundation::{BOOL, LPARAM, RECT, TRUE}, Graphics::Gdi::{EnumDisplayMonitors, HDC, HMONITOR}, System::{ProcessStatus::GetModuleFileNameExW, Threading::{OpenProcess, PROCESS_QUERY_INFORMATION, PROCESS_VM_READ}}, UI::WindowsAndMessaging::{EnumWindows, GetWindowDisplayAffinity, GetWindowRect, GetWindowTextLengthW, GetWindowTextW, GetWindowThreadProcessId, IsWindow, IsWindowVisible, WDA_EXCLUDEFROMCAPTURE}};
+use windows::Win32::{
+    Foundation::{BOOL, LPARAM, RECT, TRUE},
+    Graphics::Gdi::{EnumDisplayMonitors, HDC, HMONITOR},
+    System::{
+        ProcessStatus::GetModuleFileNameExW,
+        Threading::{OpenProcess, PROCESS_QUERY_INFORMATION, PROCESS_VM_READ},
+    },
+    UI::WindowsAndMessaging::{
+        EnumWindows, GetWindowDisplayAffinity, GetWindowRect, GetWindowTextLengthW, GetWindowTextW,
+        GetWindowThreadProcessId, IsWindow, IsWindowVisible, WDA_EXCLUDEFROMCAPTURE,
+    },
+};
 
 pub use windows::Win32::Foundation::HWND;
 
-use crate::{prelude::{CapturableContentError, CapturableContentFilter, CapturableWindow}, util::{Point, Rect, Size}};
+use crate::{
+    prelude::{CapturableContentError, CapturableContentFilter, CapturableWindow},
+    util::{Point, Rect, Size},
+};
 
 use super::AutoHandle;
 
@@ -51,12 +70,12 @@ impl WindowsCapturableWindow {
             Rect {
                 origin: Point {
                     x: rect.left as f64,
-                    y: rect.top as f64
+                    y: rect.top as f64,
                 },
                 size: Size {
                     width: (rect.right - rect.left) as f64,
                     height: (rect.bottom - rect.top) as f64,
-                }
+                },
             }
         }
     }
@@ -72,7 +91,7 @@ impl WindowsCapturableWindow {
 
 impl Hash for WindowsCapturableWindow {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.0.0.hash(state);
+        self.0 .0.hash(state);
     }
 }
 
@@ -96,21 +115,19 @@ impl WindowsCapturableDisplay {
         Rect {
             origin: Point {
                 x: self.1.left as f64,
-                y: self.1.top as f64
+                y: self.1.top as f64,
             },
             size: Size {
                 width: (self.1.right - self.1.left) as f64,
-                height: (self.1.bottom - self.1.top) as f64
-            }
+                height: (self.1.bottom - self.1.top) as f64,
+            },
         }
     }
 }
 
-
-
 impl Hash for WindowsCapturableDisplay {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.0.0.hash(state);
+        self.0 .0.hash(state);
     }
 }
 
@@ -137,10 +154,11 @@ impl WindowsCapturableApplication {
             //       Alternatively, it might be better to use the accessibility APIs.
             let process = AutoHandle(process);
             let mut process_name = vec![0u16; 64];
-            let mut len = GetModuleFileNameExW (process.0, None, process_name.as_mut_slice()) as usize;
+            let mut len =
+                GetModuleFileNameExW(process.0, None, process_name.as_mut_slice()) as usize;
             while len == process_name.len() - 1 {
                 process_name = vec![0u16; process_name.len() * 2];
-                len = GetModuleFileNameExW (process.0, None, process_name.as_mut_slice()) as usize;
+                len = GetModuleFileNameExW(process.0, None, process_name.as_mut_slice()) as usize;
             }
 
             if len == 0 {
@@ -153,7 +171,7 @@ impl WindowsCapturableApplication {
 
             if let Some(file_name) = file_name {
                 if let Some(name_str) = file_name.to_str() {
-                    return name_str.to_string()
+                    return name_str.to_string();
                 }
             }
 
@@ -174,6 +192,7 @@ impl WindowsCapturableApplication {
 pub struct WindowsCapturableContent {
     pub(crate) windows: Vec<HWND>,
     pub(crate) displays: Vec<(HMONITOR, RECT)>,
+    pub excluding_windows: Vec<HWND>,
 }
 
 unsafe extern "system" fn enum_windows_callback(window: HWND, windows_ptr_raw: LPARAM) -> BOOL {

@@ -265,7 +265,6 @@ impl CapturableContent {
     }
 
     /// Get an iterator over the capturable excluding windows
-    #[cfg(target_os = "macos")]
     pub fn excluding_windows<'a>(&'a self) -> CapturableExcludingWindowIterator<'a> {
         CapturableExcludingWindowIterator {
             content: self,
