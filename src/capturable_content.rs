@@ -1,17 +1,29 @@
-use std::{error::Error, fmt::{Debug, Display}};
+use std::{
+    error::Error,
+    fmt::{Debug, Display},
+};
 
-use crate::{platform::platform_impl::{ImplCapturableApplication, ImplCapturableContent, ImplCapturableContentFilter, ImplCapturableDisplay, ImplCapturableWindow}, util::Rect};
+use crate::{
+    platform::platform_impl::{
+        ImplCapturableApplication, ImplCapturableContent, ImplCapturableContentFilter,
+        ImplCapturableDisplay, ImplCapturableWindow,
+    },
+    util::Rect,
+};
 
 /// Represents an error that occurred when enumerating capturable content
 #[derive(Debug, Clone)]
 pub enum CapturableContentError {
-    Other(String)
+    Other(String),
 }
 
 impl Display for CapturableContentError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Other(message) => f.write_fmt(format_args!("CapturableContentError::Other(\"{}\")", message))
+            Self::Other(message) => f.write_fmt(format_args!(
+                "CapturableContentError::Other(\"{}\")",
+                message
+            )),
         }
     }
 }
@@ -41,7 +53,10 @@ pub struct CapturableWindowFilter {
 
 impl Default for CapturableWindowFilter {
     fn default() -> Self {
-        Self { desktop_windows: false, onscreen_only: true }
+        Self {
+            desktop_windows: false,
+            onscreen_only: true,
+        }
     }
 }
 
@@ -62,16 +77,13 @@ impl CapturableContentFilter {
         Self {
             displays,
             windows,
-            impl_capturable_content_filter: ImplCapturableContentFilter::default()
+            impl_capturable_content_filter: ImplCapturableContentFilter::default(),
         }
     }
 
     /// Whether this filter allows any capturable content
     pub fn is_empty(&self) -> bool {
-        !(
-            self.windows.is_some() ||
-            self.displays
-        )
+        !(self.windows.is_some() || self.displays)
     }
 
     /// All capturable displays, but no windows
@@ -105,7 +117,7 @@ impl CapturableContentFilter {
     pub const NORMAL_WINDOWS: Self = CapturableContentFilter {
         windows: Some(CapturableWindowFilter {
             desktop_windows: false,
-            onscreen_only: true
+            onscreen_only: true,
         }),
         displays: false,
         impl_capturable_content_filter: ImplCapturableContentFilter::NORMAL_WINDOWS,
@@ -124,7 +136,7 @@ impl CapturableContentFilter {
 
 /// A collection of capturable content (windows, screens)
 pub struct CapturableContent {
-    impl_capturable_content: ImplCapturableContent
+    impl_capturable_content: ImplCapturableContent,
 }
 
 unsafe impl Send for CapturableContent {}
@@ -133,7 +145,7 @@ unsafe impl Sync for CapturableContent {}
 /// An iterator over capturable windows
 pub struct CapturableWindowIterator<'content> {
     content: &'content CapturableContent,
-    i: usize
+    i: usize,
 }
 
 impl Iterator for CapturableWindowIterator<'_> {
@@ -143,24 +155,30 @@ impl Iterator for CapturableWindowIterator<'_> {
         if self.i < self.content.impl_capturable_content.windows.len() {
             let i = self.i;
             self.i += 1;
-            Some(CapturableWindow { impl_capturable_window: ImplCapturableWindow::from_impl(self.content.impl_capturable_content.windows[i].clone()) })
+            Some(CapturableWindow {
+                impl_capturable_window: ImplCapturableWindow::from_impl(
+                    self.content.impl_capturable_content.windows[i].clone(),
+                ),
+            })
         } else {
             None
         }
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        (self.i, Some(self.content.impl_capturable_content.windows.len()))
+        (
+            self.i,
+            Some(self.content.impl_capturable_content.windows.len()),
+        )
     }
 }
 
-impl ExactSizeIterator for CapturableWindowIterator<'_> {
-}
+impl ExactSizeIterator for CapturableWindowIterator<'_> {}
 
 /// An iterator over capturable displays
 pub struct CapturableDisplayIterator<'content> {
     content: &'content CapturableContent,
-    i: usize
+    i: usize,
 }
 
 impl Iterator for CapturableDisplayIterator<'_> {
@@ -170,14 +188,21 @@ impl Iterator for CapturableDisplayIterator<'_> {
         if self.i < self.content.impl_capturable_content.displays.len() {
             let i = self.i;
             self.i += 1;
-            Some(CapturableDisplay { impl_capturable_display: ImplCapturableDisplay::from_impl(self.content.impl_capturable_content.displays[i].clone()) })
+            Some(CapturableDisplay {
+                impl_capturable_display: ImplCapturableDisplay::from_impl(
+                    self.content.impl_capturable_content.displays[i].clone(),
+                ),
+            })
         } else {
             None
         }
     }
-    
+
     fn size_hint(&self) -> (usize, Option<usize>) {
-        (self.i, Some(self.content.impl_capturable_content.displays.len()))
+        (
+            self.i,
+            Some(self.content.impl_capturable_content.displays.len()),
+        )
     }
 }
 
@@ -188,11 +213,13 @@ impl ExactSizeIterator for CapturableDisplayIterator<'_> {
 }
 
 /// An iterator over capturable excluding_windows
+#[cfg(target_os = "macos")]
 pub struct CapturableExcludingWindowIterator<'content> {
     content: &'content CapturableContent,
-    i: usize
+    i: usize,
 }
 
+#[cfg(target_os = "macos")]
 impl Iterator for CapturableExcludingWindowIterator<'_> {
     type Item = CapturableWindow;
 
@@ -200,44 +227,59 @@ impl Iterator for CapturableExcludingWindowIterator<'_> {
         if self.i < self.content.impl_capturable_content.excluding_windows.len() {
             let i = self.i;
             self.i += 1;
-            Some(CapturableWindow { impl_capturable_window: ImplCapturableWindow::from_impl(self.content.impl_capturable_content.excluding_windows[i].clone()) })
+            Some(CapturableWindow {
+                impl_capturable_window: ImplCapturableWindow::from_impl(
+                    self.content.impl_capturable_content.excluding_windows[i].clone(),
+                ),
+            })
         } else {
             None
         }
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        (self.i, Some(self.content.impl_capturable_content.excluding_windows.len()))
+        (
+            self.i,
+            Some(self.content.impl_capturable_content.excluding_windows.len()),
+        )
     }
 }
 
-impl ExactSizeIterator for CapturableExcludingWindowIterator<'_> {
-}
+impl ExactSizeIterator for CapturableExcludingWindowIterator<'_> {}
 
 impl CapturableContent {
     /// Requests capturable content from the OS
-    /// 
+    ///
     /// Note that the returned capturable content may be stale - for example, a window enumerated in this capturable content
     /// may have been closed before it is used to open a stream, and creating a stream for that window will result in an error.
     pub async fn new(filter: CapturableContentFilter) -> Result<Self, CapturableContentError> {
         Ok(Self {
-            impl_capturable_content: ImplCapturableContent::new(filter).await?
+            impl_capturable_content: ImplCapturableContent::new(filter).await?,
         })
     }
 
     /// Get an iterator over the capturable windows
     pub fn windows<'a>(&'a self) -> CapturableWindowIterator<'a> {
-        CapturableWindowIterator { content: self, i: 0 }
+        CapturableWindowIterator {
+            content: self,
+            i: 0,
+        }
     }
 
     /// Get an iterator over the capturable excluding windows
     pub fn excluding_windows<'a>(&'a self) -> CapturableExcludingWindowIterator<'a> {
-        CapturableExcludingWindowIterator { content: self, i: 0 }
+        CapturableExcludingWindowIterator {
+            content: self,
+            i: 0,
+        }
     }
 
     /// Get an iterator over the capturable displays
     pub fn displays<'a>(&'a self) -> CapturableDisplayIterator<'a> {
-        CapturableDisplayIterator { content: self, i: 0 }
+        CapturableDisplayIterator {
+            content: self,
+            i: 0,
+        }
     }
 }
 
@@ -250,7 +292,7 @@ pub(crate) enum Capturable {
 /// Represents a capturable application window
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct CapturableWindow {
-    pub(crate) impl_capturable_window: ImplCapturableWindow
+    pub(crate) impl_capturable_window: ImplCapturableWindow,
 }
 
 unsafe impl Send for CapturableWindow {}
@@ -275,7 +317,7 @@ impl CapturableWindow {
     /// Gets the application that owns this window
     pub fn application(&self) -> CapturableApplication {
         CapturableApplication {
-            impl_capturable_application: self.impl_capturable_window.application()
+            impl_capturable_application: self.impl_capturable_window.application(),
         }
     }
 
@@ -288,12 +330,12 @@ impl CapturableWindow {
 /// Represents a capturable display
 #[derive(Debug, Clone)]
 pub struct CapturableDisplay {
-    pub(crate) impl_capturable_display: ImplCapturableDisplay
+    pub(crate) impl_capturable_display: ImplCapturableDisplay,
 }
 
 impl CapturableDisplay {
     /// Gets the virtual screen rectangle of this display
-    /// 
+    ///
     /// Note: Currently on windows, this is only evaluated at the time of display enumeration
     pub fn rect(&self) -> Rect {
         self.impl_capturable_display.rect()
@@ -305,12 +347,12 @@ unsafe impl Sync for CapturableDisplay {}
 
 /// Represents an application with capturable windows
 pub struct CapturableApplication {
-    impl_capturable_application: ImplCapturableApplication
+    impl_capturable_application: ImplCapturableApplication,
 }
 
 impl CapturableApplication {
     /// Gets the "identifier" of the application
-    /// 
+    ///
     /// On MacOS, this is the application bundle, and on windows, this is the application file name
     pub fn identifier(&self) -> String {
         self.impl_capturable_application.identifier()
