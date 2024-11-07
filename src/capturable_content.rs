@@ -213,13 +213,11 @@ impl ExactSizeIterator for CapturableDisplayIterator<'_> {
 }
 
 /// An iterator over capturable excluding_windows
-#[cfg(target_os = "macos")]
 pub struct CapturableExcludingWindowIterator<'content> {
     content: &'content CapturableContent,
     i: usize,
 }
 
-#[cfg(target_os = "macos")]
 impl Iterator for CapturableExcludingWindowIterator<'_> {
     type Item = CapturableWindow;
 
