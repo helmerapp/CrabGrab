@@ -211,36 +211,55 @@ impl WindowsCapturableContent {
     pub async fn new(filter: CapturableContentFilter) -> Result<Self, CapturableContentError> {
         let mut displays = Vec::<(HMONITOR, RECT)>::new();
         let mut windows = Vec::<HWND>::new();
+        let mut excluding_windows = Vec::<HWND>::new();
         unsafe {
             if filter.displays {
-                EnumDisplayMonitors(HDC(0), None, Some(enum_monitors_callback), LPARAM(&mut displays as *mut _ as *mut c_void as isize));
+                EnumDisplayMonitors(
+                    HDC(0),
+                    None,
+                    Some(enum_monitors_callback),
+                    LPARAM(&mut displays as *mut _ as *mut c_void as isize),
+                );
             }
             if let Some(window_filter) = filter.windows {
-                let _ = EnumWindows(Some(enum_windows_callback), LPARAM(&mut windows as *mut _ as *mut c_void as isize));
-                windows = windows.iter().filter(|hwnd| {
-                    if !IsWindow(**hwnd).as_bool() {
-                        return false;
-                    }
-                    if window_filter.onscreen_only && !IsWindowVisible(**hwnd).as_bool() {
-                        return false;
-                    }
-                    let mut window_display_affinity = 0;
-                    if GetWindowDisplayAffinity(**hwnd, &mut window_display_affinity as *mut _).is_ok() {
-                        if (window_display_affinity & WDA_EXCLUDEFROMCAPTURE.0) != 0 {
+                let _ = EnumWindows(
+                    Some(enum_windows_callback),
+                    LPARAM(&mut windows as *mut _ as *mut c_void as isize),
+                );
+                windows = windows
+                    .iter()
+                    .filter(|hwnd| {
+                        if !IsWindow(**hwnd).as_bool() {
                             return false;
                         }
-                    }
-                    if !filter.impl_capturable_content_filter.filter_window_handle(hwnd) {
-                        return false;
-                    }
-                    // TODO: filter desktop windows
-                    true
-                }).map(|hwnd| *hwnd).collect();
+                        if window_filter.onscreen_only && !IsWindowVisible(**hwnd).as_bool() {
+                            return false;
+                        }
+                        let mut window_display_affinity = 0;
+                        if GetWindowDisplayAffinity(**hwnd, &mut window_display_affinity as *mut _)
+                            .is_ok()
+                        {
+                            if (window_display_affinity & WDA_EXCLUDEFROMCAPTURE.0) != 0 {
+                                return false;
+                            }
+                        }
+                        if !filter
+                            .impl_capturable_content_filter
+                            .filter_window_handle(hwnd)
+                        {
+                            return false;
+                        }
+                        // TODO: filter desktop windows
+                        true
+                    })
+                    .map(|hwnd| *hwnd)
+                    .collect();
             }
         }
         Ok(WindowsCapturableContent {
             windows,
             displays,
+            excluding_windows,
         })
     }
 }
@@ -260,17 +279,25 @@ impl WindowsCapturableWindowExt for CapturableWindow {
 
     fn from_window_handle(window_handle: HWND) -> Result<Self, CapturableContentError> {
         if !unsafe { IsWindow(window_handle).as_bool() } {
-            return Err(CapturableContentError::Other(format!("HWND {:016X} is not a window", window_handle.0)));
+            return Err(CapturableContentError::Other(format!(
+                "HWND {:016X} is not a window",
+                window_handle.0
+            )));
         }
         let mut window_display_affinity = 0;
-        if unsafe { GetWindowDisplayAffinity(window_handle, &mut window_display_affinity as *mut _).is_ok() } {
+        if unsafe {
+            GetWindowDisplayAffinity(window_handle, &mut window_display_affinity as *mut _).is_ok()
+        } {
             if (window_display_affinity & WDA_EXCLUDEFROMCAPTURE.0) != 0 {
-                return Err(CapturableContentError::Other(format!("HWND {:016X} is not capturable a window", window_handle.0)));
+                return Err(CapturableContentError::Other(format!(
+                    "HWND {:016X} is not capturable a window",
+                    window_handle.0
+                )));
             }
         }
         return Ok(CapturableWindow {
-            impl_capturable_window: WindowsCapturableWindow(window_handle)
-        })
+            impl_capturable_window: WindowsCapturableWindow(window_handle),
+        });
     }
 }
 
