@@ -111,6 +111,11 @@ impl WindowsCapturableDisplay {
         Self(monitor.0, monitor.1)
     }
 
+    pub fn id(&self) -> u32 {
+        todo!("Getting ID not yet implemented for windows");
+        return 0;
+    }
+
     pub fn rect(&self) -> Rect {
         Rect {
             origin: Point {

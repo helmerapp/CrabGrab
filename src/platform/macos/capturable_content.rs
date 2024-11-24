@@ -132,6 +132,10 @@ impl MacosCapturableDisplay {
         }
     }
 
+    pub fn id(&self) -> u32 {
+        self.display.raw_id()
+    }
+
     pub fn rect(&self) -> Rect {
         let frame = self.display.frame();
         Rect {
