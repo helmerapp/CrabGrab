@@ -332,6 +332,10 @@ pub struct CapturableDisplay {
 }
 
 impl CapturableDisplay {
+    /// Gets the id of the display
+    pub fn id(&self) -> u32 {
+        self.impl_capturable_display.id()
+    }
     /// Gets the virtual screen rectangle of this display
     ///
     /// Note: Currently on windows, this is only evaluated at the time of display enumeration
