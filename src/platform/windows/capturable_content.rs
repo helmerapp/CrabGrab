@@ -44,8 +44,8 @@ impl WindowsCapturableWindow {
     }
 
     pub fn id(&self) -> u32 {
-        todo!("Getting ID not yet implemented for windows");
-        return 0;
+        let hwnd = self.0;
+        return hwnd.0 as u32;
     }
 
     pub fn title(&self) -> String {
@@ -112,8 +112,8 @@ impl WindowsCapturableDisplay {
     }
 
     pub fn id(&self) -> u32 {
-        todo!("Getting ID not yet implemented for windows");
-        return 0;
+        let hmonitor = self.0;
+        return hmonitor.0 as u32;
     }
 
     pub fn rect(&self) -> Rect {
@@ -206,7 +206,12 @@ unsafe extern "system" fn enum_windows_callback(window: HWND, windows_ptr_raw: L
     TRUE
 }
 
-unsafe extern "system" fn enum_monitors_callback(monitor: HMONITOR, _: HDC, rect: *mut RECT, monitors_ptr_raw: LPARAM) -> BOOL {
+unsafe extern "system" fn enum_monitors_callback(
+    monitor: HMONITOR,
+    _: HDC,
+    rect: *mut RECT,
+    monitors_ptr_raw: LPARAM,
+) -> BOOL {
     let monitors: &mut Vec<(HMONITOR, RECT)> = &mut *(monitors_ptr_raw.0 as *mut c_void as *mut _);
     monitors.push((monitor, *rect));
     TRUE
@@ -342,7 +347,9 @@ pub trait WindowsCapturableContentFilterExt: Sized {
 impl WindowsCapturableContentFilterExt for CapturableContentFilter {
     fn with_exclude_window_handles(self, excluded_window_handles: &[HWND]) -> Self {
         let mut new_excluded_window_handles_list = vec![];
-        if let Some(current_excluded_window_handles) = &self.impl_capturable_content_filter.excluded_window_handles {
+        if let Some(current_excluded_window_handles) =
+            &self.impl_capturable_content_filter.excluded_window_handles
+        {
             for window_handle in current_excluded_window_handles.iter() {
                 new_excluded_window_handles_list.push(window_handle.to_owned());
             }
@@ -352,11 +359,12 @@ impl WindowsCapturableContentFilterExt for CapturableContentFilter {
         }
         Self {
             impl_capturable_content_filter: WindowsCapturableContentFilter {
-                excluded_window_handles: Some(new_excluded_window_handles_list.into_boxed_slice().into()),
+                excluded_window_handles: Some(
+                    new_excluded_window_handles_list.into_boxed_slice().into(),
+                ),
                 ..self.impl_capturable_content_filter
             },
             ..self
         }
     }
 }
-
