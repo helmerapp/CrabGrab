@@ -1,13 +1,13 @@
 [package]
 name = "crabgrab"
 description = "A cross-platform screen/window capture crate"
-version = "0.4.0"
+version = "0.4.3"
 edition = "2021"
 authors = ["Augmend, Inc. <https://github.com/AugmendTech>", "Liam Taylor <https://github.com/OutOfTheVoid>", "Tim Misiak <https://github.com/TimMisiak>"]
 documentation = "https://docs.rs/crabgrab"
 readme = "README.md"
-homepage = "https://github.com/AugmendTech/CrabGrab"
-repository = "https://github.com/AugmendTech/CrabGrab"
+homepage = "https://github.com/helmerapp/CrabGrab"
+repository = "https://github.com/helmerapp/CrabGrab"
 license = "MIT OR Apache-2.0"
 keywords = ["capture", "graphics", "window", "screen", "media"]
 categories = ["graphics", "hardware-support", "multimedia", "os"]
