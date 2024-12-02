@@ -1,5 +1,18 @@
-# CrabGrab 🦀 🖥️ 🦀 
+# CrabGrab
 A cross-platform screen-capturing crate for rust
+
+**Note:** this crate was built by the Augmend team. We initially made PRs to the original but have since then forked it for our own use at Helmer.
+
+Helmer Team Changelog
+---------------------
+1. Allow specific windows to be excluded from recordings
+2. Allow specifying color space on macOS
+3. Expose display and window IDs as u32
+4. ...
+
+The rest of the README is preserved from the original.
+
+--------------------------------------------------------
 
 [![Crates.io Version](https://img.shields.io/crates/v/crabgrab)](https://crates.io/crates/crabgrab)
 [![docs.rs](https://img.shields.io/docsrs/crabgrab)](https://docs.rs/crabgrab/)
@@ -30,15 +43,7 @@ async fn main() {
 }
 ```
 
-With CrabGrab, you can build things like:
-
-1. An AI assistant that can see your screen. A fully functional AI assistant built on top of CrabGrab can be seen in the open source [Snippy](https://github.com/AugmendTech/snippy) project.
-
-![Snippy, an AI assistant](https://github.com/AugmendTech/CrabGrab/blob/main/docs/snippy_chat_cmd.png?raw=true)
-
-2. A screen recording tool like the [Augmend](https://augmend.com) client.
-
-![Augmend, a video capture tool](https://github.com/AugmendTech/CrabGrab/blob/main/docs/augmend.png?raw=true)
+CrabGrab makes it easy.
 
 Features:
 ---------
@@ -57,9 +62,7 @@ Features:
 Examples
 --------
 
-For a full application example, check out [Snippy](https://github.com/AugmendTech/snippy), an AI assistant built on top of CrabGrab.
-
-Small examples showing how to use the CrabGrab crate can be found at [crabgrab/examples](examples). You can run the examples from the repository:
+Examples showing how to use the CrabGrab crate can be found at [crabgrab/examples](examples). You can run the examples from the repository:
 
 `cargo run --example <example_name>`
 
