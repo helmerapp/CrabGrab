@@ -10,7 +10,7 @@ async fn main() {
     };
     let filter = CapturableContentFilter::DISPLAYS;
     let content = CapturableContent::new(filter).await.unwrap();
-    let config = CaptureConfig::with_display(content.displays().next().unwrap(), CapturePixelFormat::Bgra8888);
+    let config = CaptureConfig::with_display(content.displays().next().unwrap(), CapturePixelFormat::Bgra8888, None);
 
     let mut stream = CaptureStream::new(token, config, |result| {
         if let StreamEvent::Video(frame) = result.expect("Expected stream event") {

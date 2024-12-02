@@ -52,7 +52,7 @@ fn main() {
             .expect("Expected to get capturable displays");
         let display = content.displays().next()
             .expect("Expected at least one capturable display");
-        let config = CaptureConfig::with_display(display, CapturePixelFormat::Bgra8888)
+        let config = CaptureConfig::with_display(display, CapturePixelFormat::Bgra8888, None)
             .with_wgpu_device(gfx.clone())
             .expect("Expected config with wgpu device");
         let (tx_result, rx_result) = futures::channel::oneshot::channel::<Result<Option<VideoFrame>, StreamError>>();
