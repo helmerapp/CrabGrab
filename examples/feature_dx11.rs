@@ -26,7 +26,8 @@ async fn main() {
                 println!("Failed to get dx11 texture");
             }
         }
-    }).unwrap();
+    })
+    .unwrap();
 
     std::thread::sleep(Duration::from_millis(20000));
 
