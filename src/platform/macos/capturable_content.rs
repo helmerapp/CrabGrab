@@ -8,6 +8,8 @@ use crate::{capturable_content::{CapturableContentError, CapturableContentFilter
 
 use super::objc_wrap::{get_window_description, get_window_levels, CGMainDisplayID, CGWindowID, SCDisplay, SCRunningApplication, SCShareableContent, SCWindow};
 
+const SC_PERMISSION_DENIED_ERROR_CODE: isize = -3801;
+
 pub struct MacosCapturableContent {
     pub windows: Vec<SCWindow>,
     pub excluding_windows: Vec<SCWindow>,
@@ -48,9 +50,12 @@ impl MacosCapturableContent {
                 })
             },
             Ok(Err(error)) => {
+                if error.code() == SC_PERMISSION_DENIED_ERROR_CODE {
+                    return Err(CapturableContentError::Other("SCShareableContent error: Permission to screen capture was denied".to_string()))
+                }
                 Err(CapturableContentError::Other(format!("SCShareableContent returned error code: {}", error.code())))
             }
-            Err(error) => Err(CapturableContentError::Other(format!("Failed to receive SCSharableContent result from completion handler future: {}", error.to_string()))),
+            Err(error) => Err(CapturableContentError::Other(format!("Failed to receive SCSharableContent result from completion handler future: {}", error))),
         }
     }
 }
