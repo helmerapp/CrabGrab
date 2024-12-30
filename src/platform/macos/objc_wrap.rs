@@ -2272,6 +2272,7 @@ impl CVPixelFormat {
                 0x41424752 => Self::ABGR8888,
                 0x52474241 => Self::RGBA8888,
                 0x34323076 => Self::V420,
+                0x34323066 => Self::F420,
                 _ => {
                     return None;
                 }
