@@ -1,7 +1,7 @@
 #![allow(unused)]
-use std::{marker::PhantomData, time::{Duration, Instant}, fmt::Debug};
+use std::{ffi::c_void, fmt::Debug, marker::PhantomData, time::{Duration, Instant}};
 
-use crate::{platform::platform_impl::{ImplAudioFrame, ImplVideoFrame}, util::*};
+use crate::{platform::{macos::objc_wrap::CMSampleBuffer, platform_impl::{ImplAudioFrame, ImplVideoFrame}}, util::*};
 
 /// The rate to capture audio samples
 #[derive(Copy, Clone, Debug)]
@@ -164,6 +164,11 @@ impl VideoFrame {
     /// Get the rectangle of the frame representing containing the captured contents
     pub fn content_rect(&self) -> Rect {
         self.impl_video_frame.content_rect()
+    }
+
+    /// Get CMSampleBuffer 
+    pub fn get_cm_sample_buffer(&self) -> *const c_void {
+        self.impl_video_frame.cm_sample_buffer()
     }
 }
 
