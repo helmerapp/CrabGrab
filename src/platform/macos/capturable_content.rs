@@ -1,19 +1,20 @@
 use std::{cell::Cell, fmt::Debug, hash::Hash, sync::Arc};
 
-use futures::channel::oneshot;
+use cidre::{arc::Retained, ns::{self, Array}, sc};
+use futures::{channel::oneshot, executor::block_on};
 use libc::getpid;
 use parking_lot::Mutex;
 
 use crate::{capturable_content::{CapturableContentError, CapturableContentFilter}, prelude::{CapturableContent, CapturableWindow}, util::{Point, Rect, Size}};
 
-use super::objc_wrap::{get_window_description, get_window_levels, CGMainDisplayID, CGWindowID, SCDisplay, SCRunningApplication, SCShareableContent, SCWindow};
+use super::objc_wrap::{get_window_description, get_window_levels, CGMainDisplayID, CGWindowID} ;
 
 const SC_PERMISSION_DENIED_ERROR_CODE: isize = -3801;
 
 pub struct MacosCapturableContent {
-    pub windows: Vec<SCWindow>,
-    pub excluding_windows: Vec<SCWindow>,
-    pub displays: Vec<SCDisplay>,
+    pub windows: Retained<Array<sc::Window>>,
+    pub excluding_windows: Retained<Array<sc::Window>>,
+    pub displays: Retained<Array<sc::Display>>,
 }
 
 impl MacosCapturableContent {
@@ -21,28 +22,37 @@ impl MacosCapturableContent {
         // Force core graphics initialization
         unsafe { CGMainDisplayID() };
         let (exclude_desktop, onscreen_only) = filter.windows.map_or((false, true), |filter| (!filter.desktop_windows, filter.onscreen_only));
-        let (tx, rx) = oneshot::channel();
+        let (tx, rx) = oneshot::channel::<Result<Retained<sc::ShareableContent>,ns::Error>>();
         let mut tx = Mutex::new(Some(tx));
-        SCShareableContent::get_shareable_content_with_completion_handler(exclude_desktop, onscreen_only, move |result| {
+        let content = block_on(sc::ShareableContent::current());
+        if let Ok(content) = content {
             if let Some(tx) = tx.lock().take() {
-                let _ = tx.send(result);
+                let _ = tx.send(Ok(content));
             }
-        });
+        };
+        //TODO: check this
+        // sc::ShareableContent::current_with_ch();
+        // SCShareableContent::get_shareable_content_with_completion_handler(exclude_desktop, onscreen_only, move |result| {
+        //     if let Some(tx) = tx.lock().take() {
+        //         let _ = tx.send(result);
+        //     }
+        // });
 
         match rx.await {
             Ok(Ok(content)) => {
-                let windows = content.windows()
-                    .into_iter()
-                    .filter(|window| filter.impl_capturable_content_filter.filter_scwindow(window))
-                    .collect();
-                let excluding_windows = content.windows()
-                    .into_iter()
-                    .filter(|window| !filter.impl_capturable_content_filter.filter_scwindow(window))
-                    .collect();
-                let displays = content.displays()
-                    .into_iter()
-                    .filter(|display| filter.impl_capturable_content_filter.filter_scdisplay(display))
-                    .collect();
+                // TODO: support filtering
+                let windows = content.windows();
+                    // .into_iter()
+                    // .filter(|window| filter.impl_capturable_content_filter.filter_scwindow(window))
+                    // .collect();
+                let excluding_windows = content.windows();
+                    // .into_iter()
+                    // .filter(|window| !filter.impl_capturable_content_filter.filter_scwindow(window))
+                    // .collect();
+                let displays = content.displays();
+                    // .into_iter()
+                    // .filter(|display| filter.impl_capturable_content_filter.filter_scdisplay(display))
+                    // .collect();
                 Ok(Self {
                     windows,
                     displays,
@@ -62,22 +72,26 @@ impl MacosCapturableContent {
 
 #[derive(Clone)]
 pub struct MacosCapturableWindow {
-    pub(crate) window: SCWindow
+    pub(crate) window: Retained<sc::Window>
 }
 
 impl MacosCapturableWindow {
-    pub fn from_impl(window: SCWindow) -> Self {
+    pub fn from_impl(window: Retained<sc::Window>) -> Self {
         Self {
             window
         }
     }
 
     pub fn id(&self) -> u32 {
-        self.window.id().0
+        self.window.id().to_be()
     }
 
     pub fn title(&self) -> String {
-        self.window.title()
+        if let Some(title) = self.window.title() {
+            title.to_string()
+        } else {
+            "Unknown".to_string()
+        }
     }
 
     pub fn rect(&self) -> Rect {
@@ -88,20 +102,21 @@ impl MacosCapturableWindow {
                 y: frame.origin.y,
             },
             size: Size {
-                width: frame.size.x,
-                height: frame.size.y
+                width: frame.size.width,
+                height: frame.size.height
             }
         }
     }
 
     pub fn application(&self) -> MacosCapturableApplication {
         MacosCapturableApplication {
-            running_application: self.window.owning_application()
+            // TODO: remove unwrap
+            running_application: self.window.owning_app().unwrap()
         }
     }
 
     pub fn is_visible(&self) -> bool {
-        self.window.on_screen()
+        self.window.is_on_screen()
     }
 }
 
@@ -113,13 +128,13 @@ impl Debug for MacosCapturableWindow {
 
 impl PartialEq for MacosCapturableWindow {
     fn eq(&self, other: &Self) -> bool {
-        self.window.id().0 == other.window.id().0
+        self.window.id().to_be() == other.window.id().to_be()
     }
 }
 
 impl Hash for MacosCapturableWindow {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.window.id().0.hash(state);
+        self.window.id().to_be().hash(state);
     }
 }
 
@@ -127,18 +142,18 @@ impl Eq for MacosCapturableWindow {}
 
 #[derive(Clone)]
 pub struct MacosCapturableDisplay {
-    pub(crate) display: SCDisplay
+    pub(crate) display: Retained<sc::Display>
 }
 
 impl MacosCapturableDisplay {
-    pub fn from_impl(display: SCDisplay) -> Self {
+    pub fn from_impl(display: Retained<sc::Display>) -> Self {
         Self {
             display
         }
     }
 
     pub fn id(&self) -> u32 {
-        self.display.raw_id()
+        self.display.display_id()
     }
 
     pub fn rect(&self) -> Rect {
@@ -149,8 +164,8 @@ impl MacosCapturableDisplay {
                 y: frame.origin.y,
             },
             size: Size {
-                width: frame.size.x,
-                height: frame.size.y
+                width: frame.size.width,
+                height: frame.size.height
             }
         }
     }
@@ -158,13 +173,13 @@ impl MacosCapturableDisplay {
 
 impl PartialEq for MacosCapturableDisplay {
     fn eq(&self, other: &Self) -> bool {
-        self.display.raw_id() == other.display.raw_id()
+        self.display.display_id() == other.display.display_id()
     }
 }
 
 impl Hash for MacosCapturableDisplay {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.display.raw_id().hash(state)
+        self.display.display_id().hash(state)
     }
 }
 
@@ -172,26 +187,26 @@ impl Eq for MacosCapturableDisplay {}
 
 impl Debug for MacosCapturableDisplay {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("MacosCapturableDisplay").field("display", &self.display.raw_id()).finish()
+        f.debug_struct("MacosCapturableDisplay").field("display", &self.display.display_id()).finish()
     }
 }
 
 #[derive()]
 pub struct MacosCapturableApplication {
-    pub(crate) running_application: SCRunningApplication,
+    pub(crate) running_application: Retained<sc::RunningApp>,
 }
 
 impl MacosCapturableApplication {
     pub fn identifier(&self) -> String {
-        self.running_application.bundle_identifier()
+        self.running_application.bundle_id().to_string()
     }
 
     pub fn name(&self) -> String {
-        self.running_application.application_name()
+        self.running_application.app_name().to_string()
     }
 
     pub fn pid(&self) -> i32 {
-        self.running_application.pid()
+        self.running_application.process_id()
     }
 }
 
@@ -288,17 +303,17 @@ fn get_window_level(window_id: u32) -> Result<MacosWindowLevel, ()> {
 
 impl MacosCapturableWindowExt for CapturableWindow {
     fn get_window_layer(&self) -> Result<i32, CapturableContentError> {
-        get_window_layer(self.impl_capturable_window.window.id().0)
+        get_window_layer(self.impl_capturable_window.window.id().to_be())
             .map_err(|_| CapturableContentError::Other(("Failed to retreive window layer".to_string())))
     }
 
     fn get_window_level(&self) -> Result<MacosWindowLevel, CapturableContentError> {
-        get_window_level(self.impl_capturable_window.window.id().0)
+        get_window_level(self.impl_capturable_window.window.id().to_be())
             .map_err(|_| CapturableContentError::Other(("Failed to retreive window level".to_string())))
     }
 
     fn get_window_id(&self) -> u32 {
-        self.impl_capturable_window.window.id().0
+        self.impl_capturable_window.window.id().to_be()
      }
  
      fn from_window_id(window_id: u32) -> impl std::future::Future<Output = Result<CapturableWindow, CapturableContentError>> {
@@ -332,10 +347,10 @@ impl Default for MacosCapturableContentFilter {
 }
 
 impl MacosCapturableContentFilter {
-    fn filter_scwindow(&self, window: &SCWindow) -> bool {
+    fn filter_scwindow(&self, window: &Retained<sc::Window>) -> bool {
         let mut allow = true;
         if self.window_level_range != (None, None) {
-            if let Ok(level) = get_window_level(window.id().0) {
+            if let Ok(level) = get_window_level(window.id().to_be()) {
                 allow &= match &self.window_level_range {
                     (Some(min), Some(max)) => (level >= *min) && (level <= *max),
                     (Some(min), None) => level >= *min,
@@ -345,20 +360,21 @@ impl MacosCapturableContentFilter {
             }
         }
         if let Some(excluded_bundle_ids) = &self.excluded_bundle_ids {
-            let bundle_id = window.owning_application().bundle_identifier();
+            // TODO: remove unwrap
+            let bundle_id = window.owning_app().unwrap().bundle_id().to_string();
             if excluded_bundle_ids.contains(&bundle_id.to_lowercase()) {
                 allow = false;
             }
         }
         if let Some(excluded_window_ids) = &self.excluded_window_ids {
-            if excluded_window_ids.contains(&window.id().0) {
+            if excluded_window_ids.contains(&window.id().to_be()) {
                 allow = false;
             }
         }
         allow
     }
 
-    fn filter_scdisplay(&self, display: &SCDisplay) -> bool {
+    fn filter_scdisplay(&self, display: &Retained<sc::Display>) -> bool {
         true
     }
 

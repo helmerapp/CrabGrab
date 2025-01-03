@@ -35,6 +35,19 @@ futures = "0.3"
 parking_lot = "0.12"
 half = { version = "2.4", features = ["bytemuck"], optional = true }
 bytemuck = { version = "1.15", optional = true }
+cidre = { git = "https://github.com/yury/cidre/", features = [
+    "blocks",
+    "async",
+    "dispatch",
+    "av",
+    "cf",
+    "cat",
+    "cm",
+    "ns",
+    "sc",
+    "vt",
+], default-features = false }
+
 
 [target.'cfg(target_os = "macos")'.dependencies]
 block2 = "0.5"
