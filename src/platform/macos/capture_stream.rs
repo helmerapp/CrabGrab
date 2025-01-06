@@ -398,14 +398,14 @@ impl MacosCaptureStream {
                     CapturePixelFormat::V420 =>        (SCStreamPixelFormat::V420, true),
                     CapturePixelFormat::F420 =>        (SCStreamPixelFormat::F420, true),
                 };
-                // if set_color_matrix {
-                //     config.set_color_matrix(SCStreamColorMatrix::ItuR709_2);
-                // }
+                if set_color_matrix {
+                    config.set_color_matrix(SCStreamColorMatrix::ItuR709_2);
+                }
 
-                // if let Some(color_space)= capture_config.color_space {
-                //     config.set_color_space(SCStreamColorSpaceName::from_string(color_space));
-                // }
-                // config.set_pixel_format(pixel_format);
+                if let Some(color_space)= capture_config.color_space {
+                    config.set_color_space(SCStreamColorSpaceName::from_string(color_space));
+                }
+                config.set_pixel_format(pixel_format);
                 config.set_minimum_time_interval(CMTime::new_with_seconds(capture_config.impl_capture_config.maximum_fps.map(|x| 1.0 / x).unwrap_or(1.0 / 120.0) as f64, 240));
                 /*config.set_source_rect(CGRect {
                     origin: CGPoint {
