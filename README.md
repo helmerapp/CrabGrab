@@ -9,7 +9,8 @@ A cross-platform screen-capturing crate for rust
 1. Allow specific windows to be excluded from recordings
 2. Allow specifying color space on macOS
 3. Expose display and window IDs as u32
-4. ...
+4. Expose CMSampleBuffer on macOS
+5. ...
 
 # Original Readme
 
