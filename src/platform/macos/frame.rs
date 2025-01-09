@@ -51,10 +51,12 @@ impl MacosVideoFrame {
     pub fn cm_sample_buffer(&self) -> *const c_void {
         match self {
             MacosVideoFrame::SCStream(sc_frame) => { 
-                let CMSampleBuffer(b) = sc_frame.sample_buffer;
-                b
+                let CMSampleBuffer(cm_sample_buf) = sc_frame.sample_buffer;
+                return cm_sample_buf;
             },
-            MacosVideoFrame::CGDisplayStream(cgd_frame) => todo!("no support man")
+            MacosVideoFrame::CGDisplayStream(cgd_frame) => {
+                unimplemented!("CGDisplay frames don't provide a CMSampleBuffer")
+            }
         }
     }
 }

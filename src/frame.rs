@@ -172,7 +172,7 @@ impl VideoFrame {
     #[cfg(target_os = "macos")]
     /// Get CMSampleBuffer 
     pub fn get_cm_sample_buffer(&self) -> *const c_void {
-            Some(self.impl_video_frame.cm_sample_buffer())
+            self.impl_video_frame.cm_sample_buffer()
     }
 }
 
