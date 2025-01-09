@@ -1601,7 +1601,7 @@ impl SCStream {
 
 #[repr(C)]
 #[derive(Debug)]
-pub(crate) struct CMSampleBuffer(CMSampleBufferRef);
+pub(crate) struct CMSampleBuffer(pub CMSampleBufferRef);
 
 unsafe impl Send for CMSampleBuffer {}
 

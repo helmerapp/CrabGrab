@@ -1,4 +1,4 @@
-use std::{cell::{Ref, RefCell}, marker::PhantomData, sync::Arc, time::{Duration, Instant}};
+use std::{cell::{Ref, RefCell}, ffi::c_void, marker::PhantomData, sync::Arc, time::{Duration, Instant}};
 
 use objc2::runtime::AnyObject;
 
@@ -45,6 +45,20 @@ impl MacosSCStreamVideoFrame {
 pub(crate) enum MacosVideoFrame {
     SCStream(MacosSCStreamVideoFrame),
     CGDisplayStream(MacosCGDisplayStreamVideoFrame),
+}
+
+impl MacosVideoFrame {
+    pub fn cm_sample_buffer(&self) -> *const c_void {
+        match self {
+            MacosVideoFrame::SCStream(sc_frame) => { 
+                let CMSampleBuffer(cm_sample_buf) = sc_frame.sample_buffer;
+                return cm_sample_buf;
+            },
+            MacosVideoFrame::CGDisplayStream(cgd_frame) => {
+                unimplemented!("CGDisplay frames don't provide a CMSampleBuffer")
+            }
+        }
+    }
 }
 
 impl VideoCaptureFrame for MacosVideoFrame {
