@@ -10,18 +10,7 @@ async fn main() {
     };
     let filter = CapturableContentFilter::DISPLAYS;
     let content = CapturableContent::new(filter).await.unwrap();
-
-    let crop = Rect {
-        origin: Point { x: 1116.0, y: 309.0},
-        size: Size {
-            width: 496.0,
-            height: 440.0,
-        },
-    };
-
-    let config = CaptureConfig::with_display(content.displays().next().unwrap(), CapturePixelFormat::Bgra8888, None).with_source_rect(
-        Some(crop)
-    );
+    let config = CaptureConfig::with_display(content.displays().next().unwrap(), CapturePixelFormat::Bgra8888, None);
 
     let mut stream = CaptureStream::new(token, config, |result| {
         if let StreamEvent::Video(frame) = result.expect("Expected stream event") {
