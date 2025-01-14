@@ -4,7 +4,7 @@ use std::{error::Error, fmt::Display};
 use crate::platform::platform_impl::{ImplAudioCaptureConfig, ImplCaptureAccessToken, ImplCaptureConfig, ImplCaptureStream};
 use crate::capturable_content::Capturable;
 use crate::prelude::{AudioChannelCount, AudioFrame, AudioSampleRate, CapturableDisplay, CapturableWindow, VideoFrame};
-use crate::util::{Rect, Size};
+use crate::util::{CropArea, Size};
 
 /// Represents an event in a capture stream
 #[derive(Debug)]
@@ -166,7 +166,7 @@ pub enum CapturePixelFormat {
 pub struct CaptureConfig {
     pub(crate) target: Capturable,
     pub(crate) output_size: Size,
-    pub(crate) source_rect: Option<Rect>,
+    pub(crate) crop_area: Option<CropArea>,
     pub(crate) show_cursor: bool,
     pub(crate) pixel_format: CapturePixelFormat,
     pub(crate) capture_audio: Option<AudioCaptureConfig>,
@@ -220,7 +220,7 @@ impl CaptureConfig {
             target: Capturable::Window(window),
             pixel_format,
             output_size: rect.size,
-            source_rect: None,
+            crop_area: None,
             show_cursor: false,
             impl_capture_config: ImplCaptureConfig::new(),
             capture_audio: None,
@@ -238,7 +238,7 @@ impl CaptureConfig {
             excluded_windows,
             pixel_format,
             output_size: rect.size,
-            source_rect: None,
+            crop_area: None,
             show_cursor: false,
             impl_capture_config: ImplCaptureConfig::new(),
             capture_audio: None,
@@ -273,11 +273,10 @@ impl CaptureConfig {
         }
     }
 
-    /// Configure the source rect area (crop area)
-    pub fn with_source_rect(self, source_rect: Option<Rect>) -> Self {
-        println!("setting source_rect to {:?}",source_rect);
+    /// Configure the crop area to capture
+    pub fn with_crop_area(self, crop_area: Option<CropArea>) -> Self {
         Self {
-            source_rect,
+            crop_area,
             ..self
         }
     }

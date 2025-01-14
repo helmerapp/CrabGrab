@@ -240,15 +240,15 @@ impl MacosCaptureStream {
                 }
                 config.set_pixel_format(pixel_format);
                 config.set_minimum_time_interval(CMTime::new_with_seconds(capture_config.impl_capture_config.maximum_fps.map(|x| 1.0 / x).unwrap_or(1.0 / 120.0) as f64, 240));
-                if let Some(source_rect) = capture_config.source_rect {
+                if let Some(crop_area) = capture_config.crop_area {
                 config.set_source_rect(CGRect {
                     origin: CGPoint {
-                        x: source_rect.origin.x,
-                        y: source_rect.origin.y,
+                        x: crop_area.origin.x,
+                        y: crop_area.origin.y,
                     },
                     size: CGSize {
-                        x: source_rect.size.width,
-                        y: source_rect.size.height
+                        x: crop_area.size.width,
+                        y: crop_area.size.height
                     }
                 });};
                 let resolution_type = match capture_config.impl_capture_config.resolution_type {
@@ -408,15 +408,15 @@ impl MacosCaptureStream {
                 }
                 config.set_pixel_format(pixel_format);
                 config.set_minimum_time_interval(CMTime::new_with_seconds(capture_config.impl_capture_config.maximum_fps.map(|x| 1.0 / x).unwrap_or(1.0 / 120.0) as f64, 240));
-                if let Some(source_rect) = capture_config.source_rect {
+                if let Some(crop_area) = capture_config.crop_area {
                 config.set_source_rect(CGRect {
                     origin: CGPoint {
-                        x: source_rect.origin.x,
-                        y: source_rect.origin.y,
+                        x: crop_area.origin.x,
+                        y: crop_area.origin.y,
                     },
                     size: CGSize {
-                        x: source_rect.size.width,
-                        y: source_rect.size.height
+                        x: crop_area.size.width,
+                        y: crop_area.size.height
                     }
                 });};
                 let resolution_type = match capture_config.impl_capture_config.resolution_type {
@@ -425,13 +425,11 @@ impl MacosCaptureStream {
                     MacosCaptureResolutionType::Nominal => SCCaptureResolutionType::SCCaptureResolutionNominal,
                 };
                 _ = config.set_resolution_type(resolution_type);
-                let size = if let Some(source_rect) = capture_config.source_rect {
+                let size = if let Some(crop_area) = capture_config.crop_area {
+                    let scaled_crop_area = crop_area.size.scaled(crop_area.scale_factor.unwrap_or(1.0));
                 CGSize {
-                    //TODO: use scale
-                    // x: source_rect.size.width * 2.0,
-                    // y: source_rect.size.height * 2.0
-                    x: source_rect.size.width,
-                    y: source_rect.size.height
+                    x: scaled_crop_area.width,
+                    y: scaled_crop_area.height
                 }
                 } else {
                     CGSize {
