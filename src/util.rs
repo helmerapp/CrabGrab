@@ -78,3 +78,12 @@ impl Rect {
         }
     }
 }
+
+/// Represents a crop area to capture
+#[derive(Debug, Copy, Clone)]
+pub struct CropArea {
+    pub origin: Point,
+    pub size: Size,
+    /// Default is 1.0
+    pub scale_factor: Option<f64>,
+}
