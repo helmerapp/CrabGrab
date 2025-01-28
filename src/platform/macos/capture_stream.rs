@@ -240,16 +240,17 @@ impl MacosCaptureStream {
                 }
                 config.set_pixel_format(pixel_format);
                 config.set_minimum_time_interval(CMTime::new_with_seconds(capture_config.impl_capture_config.maximum_fps.map(|x| 1.0 / x).unwrap_or(1.0 / 120.0) as f64, 240));
-                /*config.set_source_rect(CGRect {
+                if let Some(crop_area) = capture_config.crop_area {
+                config.set_source_rect(CGRect {
                     origin: CGPoint {
-                        x: capture_config.source_rect.origin.x,
-                        y: capture_config.source_rect.origin.y,
+                        x: crop_area.origin.x,
+                        y: crop_area.origin.y,
                     },
                     size: CGSize {
-                        x: capture_config.source_rect.size.width,
-                        y: capture_config.source_rect.size.height
+                        x: crop_area.size.width,
+                        y: crop_area.size.height
                     }
-                });*/
+                });};
                 let resolution_type = match capture_config.impl_capture_config.resolution_type {
                     MacosCaptureResolutionType::Automatic => SCCaptureResolutionType::SCCaptureResolutionAutomatic,
                     MacosCaptureResolutionType::Best => SCCaptureResolutionType::SCCaptureResolutionBest,
@@ -407,26 +408,36 @@ impl MacosCaptureStream {
                 }
                 config.set_pixel_format(pixel_format);
                 config.set_minimum_time_interval(CMTime::new_with_seconds(capture_config.impl_capture_config.maximum_fps.map(|x| 1.0 / x).unwrap_or(1.0 / 120.0) as f64, 240));
-                /*config.set_source_rect(CGRect {
+                if let Some(crop_area) = capture_config.crop_area {
+                config.set_source_rect(CGRect {
                     origin: CGPoint {
-                        x: capture_config.source_rect.origin.x,
-                        y: capture_config.source_rect.origin.y,
+                        x: crop_area.origin.x,
+                        y: crop_area.origin.y,
                     },
                     size: CGSize {
-                        x: capture_config.source_rect.size.width,
-                        y: capture_config.source_rect.size.height
+                        x: crop_area.size.width,
+                        y: crop_area.size.height
                     }
-                });*/
+                });};
                 let resolution_type = match capture_config.impl_capture_config.resolution_type {
                     MacosCaptureResolutionType::Automatic => SCCaptureResolutionType::SCCaptureResolutionAutomatic,
                     MacosCaptureResolutionType::Best => SCCaptureResolutionType::SCCaptureResolutionBest,
                     MacosCaptureResolutionType::Nominal => SCCaptureResolutionType::SCCaptureResolutionNominal,
                 };
                 _ = config.set_resolution_type(resolution_type);
-                config.set_size(CGSize {
-                    x: capture_config.output_size.width,
-                    y: capture_config.output_size.height,
-                });
+                let size = if let Some(crop_area) = capture_config.crop_area {
+                    let scaled_crop_area = crop_area.size.scaled(crop_area.scale_factor.unwrap_or(1.0));
+                CGSize {
+                    x: scaled_crop_area.width,
+                    y: scaled_crop_area.height
+                }
+                } else {
+                    CGSize {
+                        x: capture_config.output_size.width,
+                        y: capture_config.output_size.height,
+                    }
+                };
+                config.set_size(size);
                 config.set_scales_to_fit(capture_config.impl_capture_config.scale_to_fit);
                 config.set_queue_depth(capture_config.buffer_count as isize);
                 config.set_show_cursor(capture_config.show_cursor);
