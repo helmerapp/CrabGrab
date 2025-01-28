@@ -309,8 +309,12 @@ impl NSString {
 
     pub(crate) fn from_id_unretained(id: *mut AnyObject) -> Self {
         unsafe {
-            let _: *mut AnyObject = msg_send![id, retain];
-            Self(id)
+            if (id as *const AnyObject).is_null() {
+                Self::new("")
+            } else {
+                let _: *mut AnyObject = msg_send![id, retain];
+                Self(id)
+            }
         }
     }
 
