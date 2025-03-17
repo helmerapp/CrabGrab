@@ -1464,7 +1464,7 @@ extern fn sc_stream_output_did_output_sample_buffer_of_type(this: *mut AnyObject
 extern fn sc_stream_handler_did_stop_with_error(this: *mut AnyObject, _sel: Sel, stream: SCStream, error: NSError) -> () {
     unsafe {
         let callback_container_ivar = SCStreamHandler::get_class().instance_variable("callback_container_ptr").expect("Expected callback_container_ptr ivar on SCStreamHandler");
-        let callback_container: *mut SCStreamCallbackContainer = *callback_container_ivar.load(&mut *this);
+        let callback_container: *mut SCStreamCallbackContainer = *callback_container_ivar.load::<*mut c_void>(&mut *this) as *mut _;
         (&mut *callback_container).call_error(SCStreamCallbackError::StreamStopped);
         std::mem::forget(error);
         std::mem::forget(stream);
